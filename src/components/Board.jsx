@@ -2,11 +2,15 @@
 
 import React, {useState, useEffect} from 'react'
 import Cell from './Cell'
-import {Box, Grid, Typography, Button, Switch} from '@mui/material'
+import {Box, Grid, Typography, Button, Switch, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup} from '@mui/material'
 
 export default function Board(props){
 
   const [board, setBoard] = useState([[null, null, null], [null, null, null], [null, null, null]])
+
+  const [gameMode, setGameMode] = useState('HumanVHuman');
+
+  const [gameStart, setGameStart] = useState(false)
 
   const [currentTurn, setCurrentTurn] = useState("X")
 
@@ -14,74 +18,90 @@ export default function Board(props){
 
   const [winner, setWinner] = useState(null)
 
-  const [botMode, setBotMode] = useState(false)
-
-  const [botMove, setBotMove] = useState(false)
+  const [botMove, setBotMove] = useState(gameMode === 'BotVBot' ? true : false)
 
   useEffect(() => {
-    let size = props.size
-    let tempBoard = Array.from({length: size}, () => Array.from({length: size}, () => null))
-    setBoard(tempBoard)
-  }, [props.size])
-
-
-  useEffect(() => {
-    if (botMode && currentTurn === "O" && turnLog.length < props.size * props.size && winner === null) {
-      setBotMove(true)
-      let found = false
-      let attempts = 0
-      let randomX, randomY
-
-      while (!found && attempts < 100) {
-        randomX = Math.floor(Math.random() * 3)
-        randomY = Math.floor(Math.random() * 3)
-        console.log("random", randomX, randomY, "attempt", attempts);
-        if (board[randomY][randomX] === null) {
-          console.log("found", randomX, randomY)
-          found = true
-        }
-        attempts++
-      }
-
-      if (found){
-        setBoard((prevBoard) => {
-          const newBoard = prevBoard.map((row, index) => index === randomY ? row.slice() : row);
-          newBoard[randomY][randomX] = "O";
-          return newBoard;
-        });
-        setCurrentTurn("X");
-        setTurnLog((prevLog) => [...prevLog, {
-          x: randomX,
-          y: randomY,
-          value: "O",
-          botMove: true
-        }])
-      } else{
-        console.log("error, no cell found")
-      }
-    } else{
-      console.log("no bot move")
-      setBotMove(false)
+    if (gameStart) {
+      setWinner(null);
+      setTurnLog([]);
+      setBoard(Array.from({length: props.size}, () => Array.from({length: props.size}, () => null)));
+      setCurrentTurn("X");
     }
-  }, [botMode, currentTurn, board])
-
+  }, [gameStart, props.size]);
+  
+  useEffect(() => {
+    let shouldBotMove = false;
+    let timeoutId;
+  
+    switch (gameMode) {
+      case 'HumanVBot':
+        shouldBotMove = currentTurn === "O";
+        break;
+      case 'BotVBot':
+        shouldBotMove = currentTurn === "X" || currentTurn === "O";
+        break;
+      default:
+        shouldBotMove = false;
+        break;
+    }
+  
+    if (gameStart && shouldBotMove && turnLog.length < props.size * props.size && winner === null) {
+      timeoutId = setTimeout(() => {
+        let found = false;
+        let attempts = 0;
+        let randomX, randomY;
+  
+        while (!found && attempts < 100) {
+          randomX = Math.floor(Math.random() * props.size);
+          randomY = Math.floor(Math.random() * props.size);
+          if (board[randomY][randomX] === null) {
+            found = true;
+          }
+          attempts++;
+        }
+  
+        if (found) {
+          setBoard((prevBoard) => {
+            const newBoard = prevBoard.map((row, index) => index === randomY ? row.slice() : row);
+            newBoard[randomY][randomX] = currentTurn;
+            return newBoard;
+          });
+          console.log("Current Turn", currentTurn);
+          setCurrentTurn(currentTurn === "X" ? "O" : "X");
+          console.log("Current Turn", currentTurn);
+          setTurnLog((prevLog) => [...prevLog, {
+            x: randomX,
+            y: randomY,
+            value: currentTurn,
+            botMove: true
+          }]);
+        }
+      }, 500);
+    }
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [gameStart, gameMode, currentTurn, board, winner, turnLog]);
+  
 
   const checkWinnerHorizontal = () => {
-    board.forEach((row) => {
-      console.log(row)
-      if (row.every((cellValue) => cellValue === "X")) {
-        console.log("X wins")
-        return "X"
+    console.log("check horizontal for winner")
+    for (const row of board) {
+      console.log(row);
+      if (row.every(cellValue => cellValue === "X")) {
+        console.log("X wins");
+        return "X";
       }
-      if (row.every((cellValue) => cellValue === "O")) {
-        console.log("O wins")
-        return "O"
+      if (row.every(cellValue => cellValue === "O")) {
+        console.log("O wins");
+        return "O";
       }
-    })
+    }
     return null
   }
 
   const checkWinnerVertical = () => {
+    console.log("check vertical for winner")
     for (let i = 0 ; i < board.length ; i++){
       let column = []
       for (let j = 0 ; j < board.length ; j++){
@@ -100,7 +120,7 @@ export default function Board(props){
   }
 
   const checkWinnerDiagonal = () => {
-
+    console.log("check diagonal for winner")
     let diagonal1 = []
     let diagonal2 = []
 
@@ -137,6 +157,7 @@ export default function Board(props){
       const horizontalWinner = checkWinnerHorizontal()
       const verticalWinner = checkWinnerVertical()
       const diagonalWinner = checkWinnerDiagonal()
+      console.log(horizontalWinner, verticalWinner, diagonalWinner)
       const winner = horizontalWinner || verticalWinner || diagonalWinner
       console.log("winner", winner)
 
@@ -223,26 +244,35 @@ export default function Board(props){
         </Box>
       </Grid>
       <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Typography variant="h6">
-          Bot Mode: {botMode ? "Activated" : "Off"}
-        </Typography>
+        <FormControl component="fieldset">
+          <FormLabel component="legend">Select Game Mode</FormLabel>
+          <RadioGroup
+            row
+            aria-label="game mode"
+            name="gameMode"
+            value={gameMode}
+            onChange={(e) => setGameMode(e.target.value)}
+          >
+            <FormControlLabel value="HumanVHuman" control={<Radio />} label="Human vs Human" />
+            <FormControlLabel value="HumanVBot" control={<Radio />} label="Human vs Bot" />
+            <FormControlLabel value="BotVBot" control={<Radio />} label="Bot vs Bot" />
+          </RadioGroup>
+        </FormControl>
       </Grid>
       <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Switch
-          checked={botMode}
-          onChange={() => setBotMode(!botMode)}
-          disabled={board.some((row) => row.some((cell) => cell !== null))}
-        />
+        {gameStart ? null : <Button variant="contained" onClick={() => setGameStart(true)}>Start Game</Button>}
       </Grid>
-      <Grid item xs={12}>
-        <Box sx={{ display: 'grid', justifyContent: 'center', alignItems: 'center'}}>
-          {createBoard()}
-        </Box>
-      </Grid>
+      {gameStart ? (
+        <Grid item xs={12}>
+          <Box sx={{ display: 'grid', justifyContent: 'center', alignItems: 'center'}}>
+            {createBoard()}
+          </Box>
+        </Grid>
+      ) : null}
       <Grid item xs={12}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Typography variant="h6">
-            {botMode && currentTurn === "O" && winner === null ? "Bot Turn"  : ""}
+            {gameMode === "HumanVBot" && currentTurn === "O" && winner === null ? "Bot Turn"  : ""}
           </Typography>
         </Box>
       </Grid>
