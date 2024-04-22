@@ -2,10 +2,13 @@
 
 import React, {useState, useEffect} from 'react'
 import Cell from './Cell'
-import {Box, Grid, Typography, Button, Link, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup} from '@mui/material'
+import {Box, Grid, Typography, Button, Slider, Stack, ButtonGroup, TextField, Link, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup} from '@mui/material'
 import GitHubIcon from '@mui/icons-material/GitHub';
 
-export default function Board(props){
+export default function Board(){
+
+  // All State Variables
+  const [boardSize, setBoardSize] = useState(3)
 
   const [board, setBoard] = useState([[null, null, null], [null, null, null], [null, null, null]])
 
@@ -21,15 +24,18 @@ export default function Board(props){
 
   const [botMove, setBotMove] = useState(gameMode === 'BotVBot' ? true : false)
 
+  // This useEffect ensures that when we start a new game all the required default values are set
   useEffect(() => {
     if (gameStart) {
       setWinner(null);
       setTurnLog([]);
-      setBoard(Array.from({length: props.size}, () => Array.from({length: props.size}, () => null)));
+      setBoard(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)));
       setCurrentTurn("X");
     }
-  }, [gameStart, props.size]);
-  
+  }, [gameStart, boardSize]);
+
+
+  // This useEffect allows the bot to move when the game is in progress
   useEffect(() => {
     let shouldBotMove = false;
     let timeoutId;
@@ -46,15 +52,16 @@ export default function Board(props){
         break;
     }
   
-    if (gameStart && shouldBotMove && turnLog.length < props.size * props.size && winner === null) {
+    if (gameStart && shouldBotMove && turnLog.length < boardSize * boardSize && winner === null) {
       timeoutId = setTimeout(() => {
         let found = false;
         let attempts = 0;
         let randomX, randomY;
   
         while (!found && attempts < 100) {
-          randomX = Math.floor(Math.random() * props.size);
-          randomY = Math.floor(Math.random() * props.size);
+          randomX = Math.floor(Math.random() * boardSize);
+          randomY = Math.floor(Math.random() * boardSize);
+          console.log("guessing", randomX, randomY);
           if (board[randomY][randomX] === null) {
             found = true;
           }
@@ -77,14 +84,14 @@ export default function Board(props){
             botMove: true
           }]);
         }
-      }, 500);
+      }, 200);
     }
     return () => {
       clearTimeout(timeoutId);
     };
   }, [gameStart, gameMode, currentTurn, board, winner, turnLog]);
   
-
+  // This function checks all the horizontal rows for a winner
   const checkWinnerHorizontal = () => {
     console.log("check horizontal for winner")
     for (const row of board) {
@@ -101,6 +108,7 @@ export default function Board(props){
     return null
   }
 
+  // This function checks all the vertical columns for a winner
   const checkWinnerVertical = () => {
     console.log("check vertical for winner")
     for (let i = 0 ; i < board.length ; i++){
@@ -120,6 +128,7 @@ export default function Board(props){
     return null
   }
 
+  // This function checks both diagonals for a winner
   const checkWinnerDiagonal = () => {
     console.log("check diagonal for winner")
     let diagonal1 = []
@@ -151,9 +160,10 @@ export default function Board(props){
 
   }
 
+  // This useEffect checks if there is a winner everytime the turnLog array changes, as long as the turnLog array is at least the same length as the board size -1 * 2 (minimum requirement to win)
   useEffect(() => {
     // find three in a row vertical, horizontal, or diagonal
-    if(turnLog.length >= 5){
+    if(turnLog.length >= (boardSize-1 * 2)){
       console.log("check winner")
       const horizontalWinner = checkWinnerHorizontal()
       const verticalWinner = checkWinnerVertical()
@@ -164,7 +174,7 @@ export default function Board(props){
 
       if (winner === "X" || winner === "O") {
         setWinner(winner)
-      } else if (winner === null && turnLog.length === props.size * props.size) {
+      } else if (winner === null && turnLog.length === boardSize * boardSize) {
         console.log("no winner", winner)
         console.log("turnLog.length", turnLog.length)
         console.log("draw")
@@ -176,6 +186,7 @@ export default function Board(props){
     }
   },[turnLog])
 
+  // This function simulates a click on the cell
   const handleCellClick = (value, x, y) =>{
     if (value === null && winner === null && botMove === false) {
       const turn = {
@@ -196,13 +207,13 @@ export default function Board(props){
         turn
       ])
 
-      // setValue(currentTurn)
       setCurrentTurn(
         currentTurn === "X" ? "O" : "X"
       )
     }
   }
 
+  // This function creates the board and the cells
   const createBoard = () => {
     return (
       board.map((row, i) => (
@@ -246,6 +257,24 @@ export default function Board(props){
         </Box>
       </Grid>) : null }
       <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Stack direction="column" alignItems="center" spacing={2}>
+          <TextField
+            label="Board Size"
+            type="number"
+            variant="outlined"
+            value={boardSize}
+            onChange={(event) => setBoardSize(event.target.value)}
+            inputProps={{ readOnly: true, }}
+            size="large"
+            sx={{ minWidth: 100 }}
+          />
+          <ButtonGroup variant="outlined" aria-label="Basic button group">
+            <Button onClick={() => setBoardSize(prevSize => Math.max(prevSize - 1, 3))}>-</Button>
+            <Button onClick={() => setBoardSize(prevSize => Math.min(prevSize + 1, 10))}>+</Button>
+          </ButtonGroup>
+        </Stack>
+      </Grid>
+      <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <FormControl component="fieldset">
           <FormLabel component="legend">Select Game Mode</FormLabel>
           <RadioGroup
@@ -286,29 +315,29 @@ export default function Board(props){
         </Box>}
         {winner && <Button variant="contained" sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => window.location.reload()}>New Game</Button>}
       </Grid>
-      <Box sx={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        bgcolor: 'grey.200', // Light gray background
-        p: 2, // Padding around the content
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center' // Center the contents
-      }}>
-        <GitHubIcon sx={{ mr: 1 }} />
-        <Typography variant="body1">
-          made by 
-          <Link 
-            href="https://github.com/ranjitmarathay" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            sx={{ ml: 0.5 }}>
-            Ranjit Marathay
-          </Link>
-        </Typography>
-      </Box>
+      <Grid item xs={12} sx={{paddingTop: "150px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}} spacing={2}>
+        <Box sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'grey.200',
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <GitHubIcon sx={{ mr: 1 }} />
+          <Typography variant="body1">
+            made by 
+            <Link 
+              href="https://github.com/ranjitmarathay" 
+              sx={{ ml: 0.5 }}>
+              Ranjit Marathay
+            </Link>
+          </Typography>
+        </Box>
+      </Grid>
     </Grid>
   )
 }
