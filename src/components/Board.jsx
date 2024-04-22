@@ -2,7 +2,8 @@
 
 import React, {useState, useEffect} from 'react'
 import Cell from './Cell'
-import {Box, Grid, Typography, Button, Switch, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup} from '@mui/material'
+import {Box, Grid, Typography, Button, Link, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup} from '@mui/material'
+import GitHubIcon from '@mui/icons-material/GitHub';
 
 export default function Board(props){
 
@@ -236,13 +237,14 @@ export default function Board(props){
           </Typography>
         </Box>
       </Grid>
+      { gameStart ? (
       <Grid item xs={12}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Typography variant="h6">
             Current Turn: {currentTurn}
           </Typography>
         </Box>
-      </Grid>
+      </Grid>) : null }
       <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <FormControl component="fieldset">
           <FormLabel component="legend">Select Game Mode</FormLabel>
@@ -284,6 +286,29 @@ export default function Board(props){
         </Box>}
         {winner && <Button variant="contained" sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => window.location.reload()}>New Game</Button>}
       </Grid>
+      <Box sx={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        bgcolor: 'grey.200', // Light gray background
+        p: 2, // Padding around the content
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center' // Center the contents
+      }}>
+        <GitHubIcon sx={{ mr: 1 }} />
+        <Typography variant="body1">
+          made by 
+          <Link 
+            href="https://github.com/ranjitmarathay" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            sx={{ ml: 0.5 }}>
+            Ranjit Marathay
+          </Link>
+        </Typography>
+      </Box>
     </Grid>
   )
 }

@@ -2,6 +2,6 @@ import Board from '../components/Board'
 
 export default function Home() {
   return (
-    <Board size={3}/>
+    <Board size={5}/>
   );
 }
