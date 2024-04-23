@@ -34,7 +34,7 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
 
       if (freeSpot !== -1 && opponentCount === boardSize - 1) {
         console.log({moveX: i, moveY: freeSpot})
-        possibleMoves.push({moveX: i, moveY: freeSpot, priority: process.env.NEXT_PUBLIC_BLOCK_PRIORITY});
+        possibleMoves.push({moveX: i, moveY: freeSpot, priority: process.env.NEXT_PUBLIC_BLOCK_PRIORITY || 0.75});
       }
     }
 
@@ -46,7 +46,7 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
   
       if (freeSpot !== -1 && opponentCount === boardSize - 1) {
         console.log({moveX: freeSpot, moveY: i})
-        possibleMoves.push({moveX: freeSpot, moveY: i, priority: process.env.NEXT_PUBLIC_BLOCK_PRIORITY});
+        possibleMoves.push({moveX: freeSpot, moveY: i, priority: process.env.NEXT_PUBLIC_BLOCK_PRIORITY || 0.75});
       }
     }
 
@@ -85,13 +85,13 @@ export const checkMovePriority = (board, boardColumns, boardDiagonals, currentTu
           tempDiagonals[1][j] = currentTurn;
         }
 
-        let priority = process.env.NEXT_PUBLIC_EDGE_PRIORITY; // Default low priority
+        let priority = process.env.NEXT_PUBLIC_EDGE_PRIORITY || 0.25; // Default low priority
         if (checkWinnerHorizontal(tempBoard) === currentTurn || 
             checkWinnerVertical(tempColumns) === currentTurn || 
             checkWinnerDiagonal(tempDiagonals) === currentTurn) {
-          priority = process.env.NEXT_PUBLIC_WIN_PRIORITY; // Winning move
+          priority = process.env.NEXT_PUBLIC_WIN_PRIORITY || 1; // Winning move
         } else if (i === 0 && (j === 0 || j === boardSize - 1) || i === boardSize - 1 && (j === 0 || j === boardSize - 1)) {
-          priority = process.env.NEXT_PUBLIC_LOW_PRIORITY; // Edge but not corner
+          priority = process.env.NEXT_PUBLIC_LOW_PRIORITY || 0.5; // Edge but not corner
         }
         moves.push({ moveX: j, moveY: i, priority: priority }); // Notice the order of moveX and moveY
       }
