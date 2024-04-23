@@ -12,38 +12,6 @@ export default function Cell(props){
   }, [props.value])
 
 
-  const handleValueChange = () => {
-    if (value === null && props.winner === null) {
-      const turn = {
-        x: props.x,
-        y: props.y,
-        value: props.currentTurn
-      }
-      
-      let newBoard = props.board
-      newBoard[props.y][props.x] = props.currentTurn
-
-      props.setBoard(newBoard)
-      
-
-      console.log(turn, props.currentTurn)
-      props.setTurnLog([
-        ...props.turnLog,
-        turn
-      ])
-
-      setValue(props.currentTurn)
-      props.setCurrentTurn(
-        props.currentTurn === "X" ? "O" : "X"
-      )
-    }
-  }
-
-  // const handleClick = () => {
-  //   props.handleCellClick(props.value, props.x, props.y)
-  //   setValue(props.currentTurn)
-  // }
-
   const handleClick = () => {
     if (value === null && props.winner === null) {
       const turn = {
@@ -65,7 +33,7 @@ export default function Cell(props){
   };
 
   return (
-    <Box 
+    <Box
       display="flex"
       justifyContent="center"
       alignItems="center"
@@ -73,7 +41,7 @@ export default function Cell(props){
       height={100}
       borderColor={"black"}
       border={1}
-      // onClick={() => handleValueChange()}
+      data-testid={`cell-${props.x}-${props.y}`}
       onClick={() => handleClick()}
     >
       {value}

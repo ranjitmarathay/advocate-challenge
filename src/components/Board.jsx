@@ -35,11 +35,91 @@ export default function Board(){
   }, [gameStart, boardSize]);
 
 
+  const findBlockingMove = (board, currentTurn) => {
+    // find a blocking move for the bot
+    // a blocking move is where there are only "X" or only "O" in a row or column with only free spot remaining
+    // const findBlockingMove = (board, currentTurn) => {
+      const opponent = currentTurn === 'X' ? 'O' : 'X';
+      const boardSize = board.length;
+
+      var possibleMoves = []
+
+      // Represent the grid as columns
+
+      for (let i = 0; i < boardSize; i++) {
+        let column = [];
+        for (let j = 0; j < boardSize; j++) {
+          column.push(board[j][i]);
+        }
+
+        let freeSpot = column.indexOf(null);
+        let opponentCount = column.filter(cell => cell === opponent).length;
+
+        if (freeSpot !== -1 && opponentCount === boardSize - 1) {
+          console.log({x: i, y: freeSpot})
+          possibleMoves.push({x: i, y: freeSpot});
+        }
+      }
+
+
+      // Represent the grid as rows
+      for (let i = 0; i < boardSize; i++) {
+        let row = board[i];
+        // console.log(row)
+        let freeSpot = row.indexOf(null);
+        let opponentCount = row.filter(cell => cell === opponent).length;
+    
+        if (freeSpot !== -1 && opponentCount === boardSize - 1) {
+          console.log({x: freeSpot, y: i})
+          possibleMoves.push({x: freeSpot, y: i});
+        }
+      }
+      
+      // Represent the grid as diagonals
+
+      let diagonal1 = []
+      let diagonal2 = []
+  
+      for (let i = 0 ; i < board.length ; i++){
+        diagonal1.push(board[i][i])
+        diagonal2.push(board[i][board.length - 1 - i])
+      }
+
+      console.log("diagonals", diagonal1, diagonal2)
+
+      // Check the first diagonal
+      let opponentCount1 = diagonal1.filter(cell => cell === opponent).length;
+      let freeSpot1 = diagonal1.indexOf(null);
+      if (opponentCount1 === boardSize - 1 && freeSpot1 !== -1) {
+          // All but one square is the opponent, and one is free
+          console.log({x: freeSpot1, y: freeSpot1})
+          possibleMoves.push({x: freeSpot1, y: freeSpot1});
+      }
+      
+      // Check the second diagonal
+      let opponentCount2 = diagonal2.filter(cell => cell === opponent).length;
+      let freeSpot2 = diagonal2.indexOf(null);
+      if (opponentCount2 === boardSize - 1 && freeSpot2 !== -1) {
+          // All but one square is the opponent, and one is free
+          console.log({x: freeSpot2, y: boardSize - 1 - freeSpot2})
+          possibleMoves.push({x: freeSpot2, y: boardSize - 1 - freeSpot2});
+      }
+
+      if (possibleMoves.length > 0) {
+        // console.log(possibleMoves)
+        return possibleMoves;
+      } else {
+        return undefined;
+      }
+  
+  }
+
   // This useEffect allows the bot to move when the game is in progress
   useEffect(() => {
     let shouldBotMove = false;
     let timeoutId;
   
+    // Determine if the bot should move based on the game mode
     switch (gameMode) {
       case 'HumanVBot':
         shouldBotMove = currentTurn === "O";
@@ -52,37 +132,59 @@ export default function Board(){
         break;
     }
   
+    // It's the bot's turn if the game has started, the bot should move and turnLog is still less than the board size and there is no winner 
     if (gameStart && shouldBotMove && turnLog.length < boardSize * boardSize && winner === null) {
       timeoutId = setTimeout(() => {
         let found = false;
         let attempts = 0;
-        let randomX, randomY;
-  
-        while (!found && attempts < 100) {
-          randomX = Math.floor(Math.random() * boardSize);
-          randomY = Math.floor(Math.random() * boardSize);
-          console.log("guessing", randomX, randomY);
-          if (board[randomY][randomX] === null) {
+        let moveX, moveY;
+        // The bot will keep guessing until it finds a valid move
+        // Find a blocking move if there is one -> move there
+        console.log("[Finding blocking move]")
+        const blockingMove = findBlockingMove(board, currentTurn);
+        if (blockingMove){
+          blockingMove.forEach(move => {
+            console.log("[Blocking Move]", move)
+            moveX = move.x;
+            moveY = move.y;
+            console.log("blocking move", moveX, moveY);
+            if (board[moveY][moveX] === null) {
+              found = true;
+            }
+          })
+        } else{
+          while (!found && attempts < 100) {     
+          moveX = Math.floor(Math.random() * boardSize);
+          moveY = Math.floor(Math.random() * boardSize);
+          console.log("guessing", moveX, moveY);
+          if (board[moveY][moveX] === null) {
             found = true;
+            break;
           }
           attempts++;
         }
+      }
   
+        // Once a valid move has been found then the bot will make the move
         if (found) {
+          // Update the board with the updated X or O
           setBoard((prevBoard) => {
-            const newBoard = prevBoard.map((row, index) => index === randomY ? row.slice() : row);
-            newBoard[randomY][randomX] = currentTurn;
+            const newBoard = prevBoard.map((row, index) => index === moveY ? row.slice() : row);
+            newBoard[moveY][moveX] = currentTurn;
             return newBoard;
           });
-          console.log("Current Turn", currentTurn);
+          // Update the current turn to the other player
           setCurrentTurn(currentTurn === "X" ? "O" : "X");
-          console.log("Current Turn", currentTurn);
+          // Add this move to the turn log
           setTurnLog((prevLog) => [...prevLog, {
-            x: randomX,
-            y: randomY,
+            x: moveX,
+            y: moveY,
             value: currentTurn,
             botMove: true
           }]);
+        } else {
+          // The code shouldn't get here, because if there aren't any valid moves left the game should end.
+          alert("No valid move found for bot. Current move:", currentTurn);
         }
       }, 200);
     }
@@ -93,9 +195,8 @@ export default function Board(){
   
   // This function checks all the horizontal rows for a winner
   const checkWinnerHorizontal = () => {
-    console.log("check horizontal for winner")
+    // console.log("check horizontal for winner")
     for (const row of board) {
-      console.log(row);
       if (row.every(cellValue => cellValue === "X")) {
         console.log("X wins");
         return "X";
@@ -110,7 +211,7 @@ export default function Board(){
 
   // This function checks all the vertical columns for a winner
   const checkWinnerVertical = () => {
-    console.log("check vertical for winner")
+    // console.log("check vertical for winner")
     for (let i = 0 ; i < board.length ; i++){
       let column = []
       for (let j = 0 ; j < board.length ; j++){
@@ -130,7 +231,7 @@ export default function Board(){
 
   // This function checks both diagonals for a winner
   const checkWinnerDiagonal = () => {
-    console.log("check diagonal for winner")
+    // console.log("check diagonal for winner")
     let diagonal1 = []
     let diagonal2 = []
 
@@ -138,7 +239,6 @@ export default function Board(){
       diagonal1.push(board[i][i])
       diagonal2.push(board[i][board.length - 1 - i])
     }
-    console.log(diagonal1, diagonal2)
     if (diagonal1.every((cellValue) => cellValue === "X")) {
       console.log("X wins diagonal 1")
       return "X"
@@ -162,56 +262,27 @@ export default function Board(){
 
   // This useEffect checks if there is a winner everytime the turnLog array changes, as long as the turnLog array is at least the same length as the board size -1 * 2 (minimum requirement to win)
   useEffect(() => {
-    // find three in a row vertical, horizontal, or diagonal
-    if(turnLog.length >= (boardSize-1 * 2)){
+    // If turnLog.length is greater than or equal to boardSize -1 * 2, check if there is a winner
+    console.log(turnLog, boardSize - 1 * 2)
+    if(turnLog.length >= (boardSize - 1 * 2)){
       console.log("check winner")
       const horizontalWinner = checkWinnerHorizontal()
       const verticalWinner = checkWinnerVertical()
       const diagonalWinner = checkWinnerDiagonal()
-      console.log(horizontalWinner, verticalWinner, diagonalWinner)
+      // console.log(horizontalWinner, verticalWinner, diagonalWinner)
       const winner = horizontalWinner || verticalWinner || diagonalWinner
-      console.log("winner", winner)
 
       if (winner === "X" || winner === "O") {
+        console.log("[WINNER]", winner)
         setWinner(winner)
       } else if (winner === null && turnLog.length === boardSize * boardSize) {
-        console.log("no winner", winner)
-        console.log("turnLog.length", turnLog.length)
-        console.log("draw")
+        console.log("[DRAW] no winner", winner, "turnLog.length", turnLog.length)
         setWinner("draw")
       } else {
-        console.log("turnLog.length", turnLog.length)
-        console.log("no winner yet")
+        console.log("[NO WINNER YET] turnLog.length", turnLog.length)
       }
     }
   },[turnLog])
-
-  // This function simulates a click on the cell
-  const handleCellClick = (value, x, y) =>{
-    if (value === null && winner === null && botMove === false) {
-      const turn = {
-        x: x,
-        y: y,
-        value: currentTurn
-      }
-      
-      let newBoard = board
-      newBoard[y][x] = currentTurn
-
-      setBoard(newBoard)
-      
-
-      console.log(turn, currentTurn)
-      setTurnLog([
-        ...turnLog,
-        turn
-      ])
-
-      setCurrentTurn(
-        currentTurn === "X" ? "O" : "X"
-      )
-    }
-  }
 
   // This function creates the board and the cells
   const createBoard = () => {
@@ -222,7 +293,6 @@ export default function Board(){
             <Cell 
               key={`${i}-${j}`}
               value={cellValue} 
-              handleCellClick={handleCellClick}
               x={j} 
               y={i} 
               setTurnLog={setTurnLog}
@@ -258,19 +328,12 @@ export default function Board(){
       </Grid>) : null }
       <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <Stack direction="column" alignItems="center" spacing={2}>
-          <TextField
-            label="Board Size"
-            type="number"
-            variant="outlined"
-            value={boardSize}
-            onChange={(event) => setBoardSize(event.target.value)}
-            inputProps={{ readOnly: true, }}
-            size="large"
-            sx={{ minWidth: 100 }}
-          />
+          <Typography data-testid="board-size" sx={{fontSize: '1.5rem'}}>
+            {boardSize} x {boardSize}
+          </Typography>
           <ButtonGroup variant="outlined" aria-label="Basic button group">
-            <Button onClick={() => setBoardSize(prevSize => Math.max(prevSize - 1, 3))}>-</Button>
-            <Button onClick={() => setBoardSize(prevSize => Math.min(prevSize + 1, 10))}>+</Button>
+            <Button data-testid="decrease-board-size" onClick={() => setBoardSize(prevSize => Math.max(prevSize - 1, 3))}>-</Button>
+            <Button data-testid="increase-board-size" onClick={() => setBoardSize(prevSize => Math.min(prevSize + 1, 10))}>+</Button>
           </ButtonGroup>
         </Stack>
       </Grid>
@@ -284,14 +347,14 @@ export default function Board(){
             value={gameMode}
             onChange={(e) => setGameMode(e.target.value)}
           >
-            <FormControlLabel value="HumanVHuman" control={<Radio />} label="Human vs Human" />
-            <FormControlLabel value="HumanVBot" control={<Radio />} label="Human vs Bot" />
-            <FormControlLabel value="BotVBot" control={<Radio />} label="Bot vs Bot" />
+            <FormControlLabel value="HumanVHuman" data-testid="human-v-human" control={<Radio />} label="Human vs Human" />
+            <FormControlLabel value="HumanVBot" data-testid="human-v-bot" control={<Radio />} label="Human vs Bot" />
+            <FormControlLabel value="BotVBot" data-testid="bot-v-bot" control={<Radio />} label="Bot vs Bot" />
           </RadioGroup>
         </FormControl>
       </Grid>
       <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        {gameStart ? null : <Button variant="contained" onClick={() => setGameStart(true)}>Start Game</Button>}
+        {gameStart ? null : <Button variant="contained" data-testid="start-button" onClick={() => setGameStart(true)}>Start Game</Button>}
       </Grid>
       {gameStart ? (
         <Grid item xs={12}>
@@ -307,7 +370,7 @@ export default function Board(){
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={12} sx={{paddingTop: "50px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}} spacing={2}>
+      <Grid item xs={12} sx={{paddingTop: "50px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
         {winner && <Box sx={{ display: 'flex', justifyContent: 'center' }}> 
           <Typography variant="h6">
             {winner === "draw" ? "Draw" : `Winner: ${winner}`}
@@ -315,7 +378,7 @@ export default function Board(){
         </Box>}
         {winner && <Button variant="contained" sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => window.location.reload()}>New Game</Button>}
       </Grid>
-      <Grid item xs={12} sx={{paddingTop: "150px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}} spacing={2}>
+      <Grid item xs={12} sx={{paddingTop: "150px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
         <Box sx={{
           position: 'fixed',
           bottom: 0,
