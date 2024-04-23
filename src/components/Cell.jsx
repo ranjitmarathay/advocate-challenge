@@ -42,7 +42,8 @@ export default function Cell(props){
       borderColor={"black"}
       border={1}
       data-testid={`cell-${props.x}-${props.y}`}
-      onClick={() => handleClick()}
+      // onClick={() => handleClick()}
+      onClick={() => props.handleBoardUpdate(props.x, props.y, props.currentTurn, props.botMove)}
     >
       {value}
     </Box>

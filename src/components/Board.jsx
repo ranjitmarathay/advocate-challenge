@@ -12,6 +12,9 @@ export default function Board(){
 
   const [board, setBoard] = useState([[null, null, null], [null, null, null], [null, null, null]])
 
+  const [boardColumns, setBoardColumns] = useState([[null, null, null], [null, null, null], [null, null, null]])
+  const [boardDiagonals, setBoardDiagonals] = useState([[null, null, null], [null, null, null]])
+
   const [gameMode, setGameMode] = useState('HumanVHuman');
 
   const [gameStart, setGameStart] = useState(false)
@@ -30,10 +33,63 @@ export default function Board(){
       setWinner(null);
       setTurnLog([]);
       setBoard(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)));
+      setBoardColumns(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)))
+      setBoardDiagonals(Array.from({length: boardSize-1}, () => Array.from({length: boardSize}, () => null)))
       setCurrentTurn("X");
     }
   }, [gameStart, boardSize]);
 
+  const handleBoardUpdate = (x, y, value, botMove) => {
+    const turn = {
+      x: x,
+      y: y,
+      value: currentTurn,
+      botMove: botMove
+    };
+    setBoard((prevBoard) => {
+      const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
+      // console.log("handleBoardUpdate setBoardRow newBoard", newBoard, x, y)
+      newBoard[turn.y][turn.x] = value;
+      return newBoard;
+    });
+
+    setBoardColumns((prevBoard) => {
+      const newBoard = prevBoard.map(row => [...row]);
+      let columnNum = turn.y
+      let rowNum = turn.x
+      // console.log("handleBoardUpdate setBoardColumns newBoard", newBoard, columnNum, rowNum)
+      newBoard[turn.x][turn.y] = value;
+      return newBoard;
+    });
+
+    setBoardDiagonals((prevBoard) => {
+      const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
+      // console.log("handleBoardUpdate setBoardColumns newBoard", newBoard, x, y)
+      if (x === y){
+        newBoard[0][turn.x] = value
+      } else if (x === boardSize - 1 - y){
+        newBoard[1][turn.x] = value
+      }
+      return newBoard;
+    });
+    
+    setCurrentTurn(value === "X" ? "O" : "X");
+
+    setTurnLog((prevLog) => [...prevLog, turn]);
+
+  }
+
+  const checkDiagonalBlockingMove = (diagonal, opponent) => {
+    let opponentCount = diagonal.filter(cell => cell === opponent).length;
+    let freeSpot = diagonal.indexOf(null);
+    
+    if (opponentCount === boardSize - 1 && freeSpot !== -1) {
+        // All but one square is the opponent, and one is free
+        console.log({x: freeSpot, y: freeSpot})
+        return {x: freeSpot, y: freeSpot};
+    }
+    return null
+  }
 
   const findBlockingMove = (board, currentTurn) => {
     // find a blocking move for the bot
@@ -43,14 +99,9 @@ export default function Board(){
 
       var possibleMoves = []
 
-      // Represent the grid as columns
-
-      for (let i = 0; i < boardSize; i++) {
-        let column = [];
-        for (let j = 0; j < boardSize; j++) {
-          column.push(board[j][i]);
-        }
-
+      // Check columns for a blocking move
+      for (let i = 0; i < boardColumns.length; i++) {
+        let column = boardColumns[i];
         let freeSpot = column.indexOf(null);
         let opponentCount = column.filter(cell => cell === opponent).length;
 
@@ -61,8 +112,8 @@ export default function Board(){
       }
 
 
-      // Represent the grid as rows
-
+      
+      // Check rows for a blocking move
       for (let i = 0; i < boardSize; i++) {
         let row = board[i];
         let freeSpot = row.indexOf(null);
@@ -73,44 +124,18 @@ export default function Board(){
           possibleMoves.push({x: freeSpot, y: i});
         }
       }
-      
-      // Represent the grid as diagonals
 
-      let diagonal1 = []
-      let diagonal2 = []
-  
-      for (let i = 0 ; i < board.length ; i++){
-        diagonal1.push(board[i][i])
-        diagonal2.push(board[board.length - 1 - i][i])
+
+      // Check the first diagonal for 
+
+      for (const diagonal of boardDiagonals) {
+        let diagonalMoves = checkDiagonalBlockingMove(diagonal, opponent)
+        if (diagonalMoves){
+          possibleMoves.push(diagonalMoves)
+        }
       }
 
-      // Check the first diagonal
-      let opponentCount1 = diagonal1.filter(cell => cell === opponent).length;
-      let freeSpot1 = diagonal1.indexOf(null);
-      
-      if (opponentCount1 === boardSize - 1 && freeSpot1 !== -1) {
-          // All but one square is the opponent, and one is free
-          console.log({x: freeSpot1, y: freeSpot1})
-          possibleMoves.push({x: freeSpot1, y: freeSpot1});
-      }
-      
-      // Check the second diagonal
-      let opponentCount2 = diagonal2.filter(cell => cell === opponent).length;
-      let freeSpot2 = diagonal2.indexOf(null);
-
-      if (opponentCount2 === boardSize - 1 && freeSpot2 !== -1) {
-          // All but one square is the opponent, and one is free
-          console.log({x: freeSpot2, y: boardSize - 1 - freeSpot2})
-          possibleMoves.push({x: freeSpot2, y: boardSize - 1 - freeSpot2});
-      }
-
-      // if (possibleMoves.length > 0) {
-      //   return possibleMoves;
-      // } else {
-      //   return ;
-      // }
       return possibleMoves
-  
   }
 
   // This useEffect allows the bot to move when the game is in progress
@@ -166,23 +191,10 @@ export default function Board(){
   
         // Once a valid move has been found then the bot will make the move
         if (found) {
-          // Update the board with the updated X or O
-          setBoard((prevBoard) => {
-            const newBoard = prevBoard.map((row, index) => index === moveY ? row.slice() : row);
-            newBoard[moveY][moveX] = currentTurn;
-            return newBoard;
-          });
-          // Update the current turn to the other player
-          setCurrentTurn(currentTurn === "X" ? "O" : "X");
-          // Add this move to the turn log
-          setTurnLog((prevLog) => [...prevLog, {
-            x: moveX,
-            y: moveY,
-            value: currentTurn,
-            botMove: true
-          }]);
+          handleBoardUpdate(moveX, moveY, currentTurn, true);
         } else {
-          // The code shouldn't get here, because if there aren't any valid moves left the game should end.
+          // If no valid move has been found then the bot will alert the user. 
+          // Code shouldn't get here, unless something is really broken.
           alert("No valid move found for bot. Current move:", currentTurn);
         }
       }, 200);
@@ -197,11 +209,9 @@ export default function Board(){
     // console.log("check horizontal for winner")
     for (const row of board) {
       if (row.every(cellValue => cellValue === "X")) {
-        console.log("X wins");
         return "X";
       }
       if (row.every(cellValue => cellValue === "O")) {
-        console.log("O wins");
         return "O";
       }
     }
@@ -210,18 +220,11 @@ export default function Board(){
 
   // This function checks all the vertical columns for a winner
   const checkWinnerVertical = () => {
-    // console.log("check vertical for winner")
-    for (let i = 0 ; i < board.length ; i++){
-      let column = []
-      for (let j = 0 ; j < board.length ; j++){
-        column.push(board[j][i])
-      }
+    for (const column of boardColumns) {
       if (column.every((cellValue) => cellValue === "X")) {
-        console.log("X wins")
         return "X"
       }
       if (column.every((cellValue) => cellValue === "O")) {
-        console.log("O wins")
         return "O"
       }
     }
@@ -230,52 +233,35 @@ export default function Board(){
 
   // This function checks both diagonals for a winner
   const checkWinnerDiagonal = () => {
-    // console.log("check diagonal for winner")
-    let diagonal1 = []
-    let diagonal2 = []
 
-    for (let i = 0 ; i < board.length ; i++){
-      diagonal1.push(board[i][i])
-      diagonal2.push(board[i][board.length - 1 - i])
+    for (const diagonal of boardDiagonals) {
+      if (diagonal.every((cellValue) => cellValue === "X")) {
+        return "X"
+      }
+      if (diagonal.every((cellValue) => cellValue === "O")) {
+        return "O"
+      }
     }
-    if (diagonal1.every((cellValue) => cellValue === "X")) {
-      console.log("X wins diagonal 1")
-      return "X"
-    }
-    if (diagonal1.every((cellValue) => cellValue === "O")) {
-      console.log("O wins diagonal 1")
-      return "O"
-    }
-    if (diagonal2.every((cellValue) => cellValue === "X")) {
-      console.log("X wins diagonal 2")
-      return "X"
-    }
-    if (diagonal2.every((cellValue) => cellValue === "O")) {
-      console.log("O wins diagonal 2")
-      return "O"
-    }
-
     return null
-
   }
 
   // This useEffect checks if there is a winner everytime the turnLog array changes, as long as the turnLog array is at least the same length as the board size -1 * 2 (minimum requirement to win)
+  // It also maintains arrays for columns and diagonals
   useEffect(() => {
     // If turnLog.length is greater than or equal to boardSize -1 * 2, check if there is a winner
+    
     console.log(turnLog, boardSize - 1 * 2)
     if(turnLog.length >= (boardSize - 1 * 2)){
-      console.log("check winner")
+      
       const horizontalWinner = checkWinnerHorizontal()
       const verticalWinner = checkWinnerVertical()
       const diagonalWinner = checkWinnerDiagonal()
-      // console.log(horizontalWinner, verticalWinner, diagonalWinner)
+      
       const winner = horizontalWinner || verticalWinner || diagonalWinner
 
       if (winner === "X" || winner === "O") {
-        console.log("[WINNER]", winner)
         setWinner(winner)
       } else if (winner === null && turnLog.length === boardSize * boardSize) {
-        console.log("[DRAW] no winner", winner, "turnLog.length", turnLog.length)
         setWinner("draw")
       } else {
         console.log("[NO WINNER YET] turnLog.length", turnLog.length)
@@ -301,6 +287,8 @@ export default function Board(){
               board={board}
               setBoard={setBoard}
               winner={winner}
+              handleBoardUpdate={handleBoardUpdate}
+              botMove={botMove}
             />
           ))}
         </Box>
