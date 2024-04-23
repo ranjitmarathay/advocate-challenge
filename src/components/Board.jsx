@@ -82,7 +82,7 @@ export default function Board(){
   
       for (let i = 0 ; i < board.length ; i++){
         diagonal1.push(board[i][i])
-        diagonal2.push(board[i][board.length - 1 - i])
+        diagonal2.push(board[board.length - 1 - i][i])
       }
 
       console.log("diagonals", diagonal1, diagonal2)
@@ -154,16 +154,16 @@ export default function Board(){
           })
         } else{
           while (!found && attempts < 100) {     
-          moveX = Math.floor(Math.random() * boardSize);
-          moveY = Math.floor(Math.random() * boardSize);
-          console.log("guessing", moveX, moveY);
-          if (board[moveY][moveX] === null) {
-            found = true;
-            break;
+            moveX = Math.floor(Math.random() * boardSize);
+            moveY = Math.floor(Math.random() * boardSize);
+            console.log("guessing", moveX, moveY);
+            if (board[moveY][moveX] === null) {
+              found = true;
+              break;
+            }
+            attempts++;
           }
-          attempts++;
         }
-      }
   
         // Once a valid move has been found then the bot will make the move
         if (found) {
