@@ -70,7 +70,6 @@ export default function Board(){
 
       setBoardDiagonals((prevBoard) => {
         const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
-        // console.log("handleBoardUpdate setBoardColumns newBoard", newBoard, x, y)
         if (x === y){
           newBoard[0][turn.x] = value
         } 
