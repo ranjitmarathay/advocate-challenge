@@ -4,6 +4,8 @@ import React, {useState, useEffect} from 'react'
 import Cell from './Cell'
 import {Box, Grid, Typography, Button, Slider, Stack, ButtonGroup, TextField, Link, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup} from '@mui/material'
 import GitHubIcon from '@mui/icons-material/GitHub';
+import { findBlockingMove, checkMovePriority, shufflePriorityGroupedItems } from './gameLogic';
+import { checkWinnerHorizontal, checkWinnerVertical, checkWinnerDiagonal } from './checkWinner';
 
 export default function Board(){
 
@@ -44,7 +46,7 @@ export default function Board(){
   }, [gameStart, boardSize]);
 
   const handleBoardUpdate = (x, y, value, botMove) => {
-    if (winner === null, board[y][x] === null) {
+    if (winner === null && board[y][x] === null) {
       const turn = {
         x: x,
         y: y,
@@ -85,71 +87,6 @@ export default function Board(){
     }
   }
 
-  const checkDiagonalBlockingMove = (diagonal, opponent, index) => {
-    let opponentCount = diagonal.filter(cell => cell === opponent).length;
-    let freeSpot = diagonal.indexOf(null);
-    console.log(opponentCount, freeSpot, index)
-    
-    if (opponentCount === boardSize - 1 && freeSpot !== -1) {
-        // All but one square is the opponent, and one is free
-        if (index === 0) {
-          console.log({x: freeSpot, y: freeSpot})
-          return {x: freeSpot, y: freeSpot};
-        } else{
-          console.log({x: freeSpot, y: boardSize - 1 - freeSpot})
-          return {x: freeSpot, y: boardSize - 1 - freeSpot};
-        }
-    }
-    return null
-  }
-
-  const findBlockingMove = (board, currentTurn) => {
-    // find a blocking move for the bot
-    // a blocking move is where there are only "X" or only "O" in a row or column with only free spot remaining
-      const opponent = currentTurn === 'X' ? 'O' : 'X';
-      const boardSize = board.length;
-
-      var possibleMoves = []
-
-      // Check columns for a blocking move
-      for (let i = 0; i < boardColumns.length; i++) {
-        let column = boardColumns[i];
-        let freeSpot = column.indexOf(null);
-        let opponentCount = column.filter(cell => cell === opponent).length;
-
-        if (freeSpot !== -1 && opponentCount === boardSize - 1) {
-          console.log({x: i, y: freeSpot})
-          possibleMoves.push({x: i, y: freeSpot});
-        }
-      }
-
-
-      
-      // Check rows for a blocking move
-      for (let i = 0; i < boardSize; i++) {
-        let row = board[i];
-        let freeSpot = row.indexOf(null);
-        let opponentCount = row.filter(cell => cell === opponent).length;
-    
-        if (freeSpot !== -1 && opponentCount === boardSize - 1) {
-          console.log({x: freeSpot, y: i})
-          possibleMoves.push({x: freeSpot, y: i});
-        }
-      }
-
-
-      // Check diagonals for blocking moves
-      for (let i = 0; i < 2; i++) {
-        let diagonalMoves = checkDiagonalBlockingMove(boardDiagonals[i], opponent, i)
-        console.log("diagonalMoves", diagonalMoves)
-        if (diagonalMoves){
-          possibleMoves.push(diagonalMoves)
-        }
-      }
-
-      return possibleMoves
-  }
-
   // This useEffect allows the bot to move when the game is in progress
   useEffect(() => {
     let shouldBotMove = false;
@@ -172,35 +109,21 @@ export default function Board(){
     if (gameStart && shouldBotMove && turnLog.length < boardSize * boardSize && winner === null) {
       timeoutId = setTimeout(() => {
         let found = false;
-        let attempts = 0;
-        let moveX, moveY;
-        // The bot will keep guessing until it finds a valid move
-        // Find a blocking move if there is one -> move there
-        console.log("[Finding blocking move]")
-        const blockingMove = findBlockingMove(board, currentTurn);
-        if (blockingMove.length > 0){
-          blockingMove.forEach(move => {
-            console.log("[Blocking Move]", move)
-            moveX = move.x;
-            moveY = move.y;
-            console.log("blocking move", moveX, moveY);
-            if (board[moveY][moveX] === null) {
-              found = true;
-            }
-          })
-        } else{
-          while (!found && attempts < 100) {     
-            moveX = Math.floor(Math.random() * boardSize);
-            moveY = Math.floor(Math.random() * boardSize);
-            // console.log("guessing", moveX, moveY);
-            if (board[moveY][moveX] === null) {
-              found = true;
-              break;
-            }
-            attempts++;
-          }
+        let moveX, moveY;        
+        
+        const blockingMoves = findBlockingMove(board, boardColumns, boardDiagonals, currentTurn);
+        const possibleMoves = checkMovePriority(board, boardColumns, boardDiagonals, currentTurn)
+        const allMoves = blockingMoves.concat(possibleMoves).sort((a, b) => b.priority - a.priority)
+        // 
+        const shuffledMoves = shufflePriorityGroupedItems(allMoves)
+        
+        moveX = shuffledMoves[0].moveX
+        moveY = shuffledMoves[0].moveY
+        
+        if (board[moveY][moveX] === null) {
+          found = true;
         }
-  
+ 
         // Once a valid move has been found then the bot will make the move
         if (found) {
           handleBoardUpdate(moveX, moveY, currentTurn, true);
@@ -208,6 +131,7 @@ export default function Board(){
           // If no valid move has been found then the bot will alert the user. 
           // Code shouldn't get here, unless something is really broken.
           alert("No valid move found for bot. Current move:", currentTurn);
+          console.error("No valid move found for bot. Current move:", currentTurn);
         }
       }, 200);
     }
@@ -216,59 +140,16 @@ export default function Board(){
     };
   }, [gameStart, gameMode, currentTurn, board, winner, turnLog]);
   
-  // This function checks all the horizontal rows for a winner
-  const checkWinnerHorizontal = () => {
-    // console.log("check horizontal for winner")
-    for (const row of board) {
-      if (row.every(cellValue => cellValue === "X")) {
-        return "X";
-      }
-      if (row.every(cellValue => cellValue === "O")) {
-        return "O";
-      }
-    }
-    return null
-  }
-
-  // This function checks all the vertical columns for a winner
-  const checkWinnerVertical = () => {
-    for (const column of boardColumns) {
-      if (column.every((cellValue) => cellValue === "X")) {
-        return "X"
-      }
-      if (column.every((cellValue) => cellValue === "O")) {
-        return "O"
-      }
-    }
-    return null
-  }
-
-  // This function checks both diagonals for a winner
-  const checkWinnerDiagonal = () => {
-    console.log("Checking diagonals:", boardDiagonals);
-    for (const diagonal of boardDiagonals) {
-      if (diagonal.every((cellValue) => cellValue === "X")) {
-        return "X"
-      }
-      if (diagonal.every((cellValue) => cellValue === "O")) {
-        return "O"
-      }
-    }
-    console.log("No complete diagonal found");
-    return null
-  }
-
   // This useEffect checks if there is a winner everytime the turnLog array changes, as long as the turnLog array is at least the same length as the board size -1 * 2 (minimum requirement to win)
-  // It also maintains arrays for columns and diagonals
   useEffect(() => {
     // If turnLog.length is greater than or equal to boardSize -1 * 2, check if there is a winner
     
     console.log(turnLog, boardSize - 1 * 2)
     if(turnLog.length >= (boardSize - 1 * 2)){
       
-      const horizontalWinner = checkWinnerHorizontal()
-      const verticalWinner = checkWinnerVertical()
-      const diagonalWinner = checkWinnerDiagonal()
+      const horizontalWinner = checkWinnerHorizontal(board)
+      const verticalWinner = checkWinnerVertical(boardColumns)
+      const diagonalWinner = checkWinnerDiagonal(boardDiagonals)
       
       const winner = horizontalWinner || verticalWinner || diagonalWinner
 
