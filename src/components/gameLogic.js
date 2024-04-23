@@ -3,15 +3,15 @@ import {checkWinnerHorizontal, checkWinnerVertical, checkWinnerDiagonal} from '.
 export const checkDiagonalBlockingMove = (diagonal, opponent, index, boardSize) => {
   let opponentCount = diagonal.filter(cell => cell === opponent).length;
   let freeSpot = diagonal.indexOf(null);
-  console.log(opponentCount, freeSpot, index)
+  // console.log(opponentCount, freeSpot, index)
   
   if (opponentCount === boardSize - 1 && freeSpot !== -1) {
       // All but one square is the opponent, and one is free
       if (index === 0) {
-        console.log({moveX: freeSpot, moveY: freeSpot})
+        // console.log({moveX: freeSpot, moveY: freeSpot})
         return {moveX: freeSpot, moveY: freeSpot, priority: 0.75};
       } else{
-        console.log({moveX: freeSpot, moveY: boardSize - 1 - freeSpot})
+        // console.log({moveX: freeSpot, moveY: boardSize - 1 - freeSpot})
         return {moveX: freeSpot, moveY: boardSize - 1 - freeSpot, priority: 0.75};
       }
   }
@@ -34,7 +34,7 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
 
       if (freeSpot !== -1 && opponentCount === boardSize - 1) {
         console.log({moveX: i, moveY: freeSpot})
-        possibleMoves.push({moveX: i, moveY: freeSpot, priority: process.env.NEXT_PUBLIC_BLOCK_PRIORITY || 0.75});
+        possibleMoves.push({moveX: i, moveY: freeSpot, priority: parseFloat(process.env.NEXT_PUBLIC_BLOCK_PRIORITY) || 0.75});
       }
     }
 
@@ -46,7 +46,7 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
   
       if (freeSpot !== -1 && opponentCount === boardSize - 1) {
         console.log({moveX: freeSpot, moveY: i})
-        possibleMoves.push({moveX: freeSpot, moveY: i, priority: process.env.NEXT_PUBLIC_BLOCK_PRIORITY || 0.75});
+        possibleMoves.push({moveX: freeSpot, moveY: i, priority: parseFloat(process.env.NEXT_PUBLIC_BLOCK_PRIORITY) || 0.75});
       }
     }
 
@@ -54,7 +54,6 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
     // Check diagonals for blocking moves
     for (let i = 0; i < 2; i++) {
       let diagonalMoves = checkDiagonalBlockingMove(boardDiagonals[i], opponent, i, boardSize)
-      console.log("diagonalMoves", diagonalMoves)
       if (diagonalMoves){
         possibleMoves.push(diagonalMoves)
       }
@@ -67,13 +66,16 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
 export const checkMovePriority = (board, boardColumns, boardDiagonals, currentTurn) => {
   var moves = []
   const boardSize = board.length;
+  let tempBoard = board.map(row => [...row]);
+  let tempColumns = boardColumns.map(column => [...column]);
+  let tempDiagonals = [ [...boardDiagonals[0]], [...boardDiagonals[1]] ];
 
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (board[i][j] === null) {
-        let tempBoard = board.map(row => [...row]);
-        let tempColumns = boardColumns.map(column => [...column]);
-        let tempDiagonals = [ [...boardDiagonals[0]], [...boardDiagonals[1]] ];
+        // let tempBoard = board.map(row => [...row]);
+        // let tempColumns = boardColumns.map(column => [...column]);
+        // let tempDiagonals = [ [...boardDiagonals[0]], [...boardDiagonals[1]] ];
 
         tempBoard[i][j] = currentTurn;
         tempColumns[j][i] = currentTurn;
@@ -85,19 +87,31 @@ export const checkMovePriority = (board, boardColumns, boardDiagonals, currentTu
           tempDiagonals[1][j] = currentTurn;
         }
 
-        let priority = process.env.NEXT_PUBLIC_EDGE_PRIORITY || 0.25; // Default low priority
+        let priority = parseFloat(process.env.NEXT_PUBLIC_EDGE_PRIORITY) || 0.25;
+
         if (checkWinnerHorizontal(tempBoard) === currentTurn || 
             checkWinnerVertical(tempColumns) === currentTurn || 
             checkWinnerDiagonal(tempDiagonals) === currentTurn) {
-          priority = process.env.NEXT_PUBLIC_WIN_PRIORITY || 1; // Winning move
-        } else if (i === 0 && (j === 0 || j === boardSize - 1) || i === boardSize - 1 && (j === 0 || j === boardSize - 1)) {
-          priority = process.env.NEXT_PUBLIC_LOW_PRIORITY || 0.5; // Edge but not corner
+          priority = parseFloat(process.env.NEXT_PUBLIC_WIN_PRIORITY) || 1; // Winning move
+        } else if ((i === 0 || i === boardSize - 1) && (j === 0 || j === boardSize - 1)) {
+          priority = parseFloat(process.env.NEXT_PUBLIC_LOW_PRIORITY) || 0.5; // Corner
         }
-        moves.push({ moveX: j, moveY: i, priority: priority }); // Notice the order of moveX and moveY
+
+        moves.push({ moveX: j, moveY: i, priority: priority });
+
+        // reset temp boards
+        tempBoard[i][j] = null;
+        tempColumns[j][i] = null;
+
+        if (i === j) {
+          tempDiagonals[0][j] = null;
+        }
+        if (i + j === boardSize - 1) {
+          tempDiagonals[1][j] = null;
+        }
       }
     }
   }
-
   return moves;
 };
 

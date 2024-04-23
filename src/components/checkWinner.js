@@ -37,6 +37,5 @@ export const checkWinnerDiagonal = (boardDiagonals) => {
       return "O"
     }
   }
-  console.log("No complete diagonal found");
   return null
 }

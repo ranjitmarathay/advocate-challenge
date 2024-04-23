@@ -114,8 +114,12 @@ export default function Board(){
         const blockingMoves = findBlockingMove(board, boardColumns, boardDiagonals, currentTurn);
         const possibleMoves = checkMovePriority(board, boardColumns, boardDiagonals, currentTurn)
         const allMoves = blockingMoves.concat(possibleMoves).sort((a, b) => b.priority - a.priority)
-        // 
+        
+        console.log("all possible moves", allMoves)
+
+        // Shuffle moves to randomize the order of the bot's moves within a priority
         const shuffledMoves = shufflePriorityGroupedItems(allMoves)
+
         
         moveX = shuffledMoves[0].moveX
         moveY = shuffledMoves[0].moveY
@@ -144,7 +148,6 @@ export default function Board(){
   useEffect(() => {
     // If turnLog.length is greater than or equal to boardSize -1 * 2, check if there is a winner
     
-    console.log(turnLog, boardSize - 1 * 2)
     if(turnLog.length >= (boardSize - 1 * 2)){
       
       const horizontalWinner = checkWinnerHorizontal(board)
@@ -158,7 +161,7 @@ export default function Board(){
       } else if (winner === null && turnLog.length === boardSize * boardSize) {
         setWinner("draw")
       } else {
-        console.log("[NO WINNER YET] turnLog.length", turnLog.length)
+        // console.log("[NO WINNER YET] turnLog.length", turnLog.length)
       }
     }
   },[turnLog])
