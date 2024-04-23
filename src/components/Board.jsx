@@ -38,7 +38,6 @@ export default function Board(){
   const findBlockingMove = (board, currentTurn) => {
     // find a blocking move for the bot
     // a blocking move is where there are only "X" or only "O" in a row or column with only free spot remaining
-    // const findBlockingMove = (board, currentTurn) => {
       const opponent = currentTurn === 'X' ? 'O' : 'X';
       const boardSize = board.length;
 
@@ -63,9 +62,9 @@ export default function Board(){
 
 
       // Represent the grid as rows
+
       for (let i = 0; i < boardSize; i++) {
         let row = board[i];
-        // console.log(row)
         let freeSpot = row.indexOf(null);
         let opponentCount = row.filter(cell => cell === opponent).length;
     
@@ -88,6 +87,7 @@ export default function Board(){
       // Check the first diagonal
       let opponentCount1 = diagonal1.filter(cell => cell === opponent).length;
       let freeSpot1 = diagonal1.indexOf(null);
+      
       if (opponentCount1 === boardSize - 1 && freeSpot1 !== -1) {
           // All but one square is the opponent, and one is free
           console.log({x: freeSpot1, y: freeSpot1})
@@ -97,17 +97,19 @@ export default function Board(){
       // Check the second diagonal
       let opponentCount2 = diagonal2.filter(cell => cell === opponent).length;
       let freeSpot2 = diagonal2.indexOf(null);
+
       if (opponentCount2 === boardSize - 1 && freeSpot2 !== -1) {
           // All but one square is the opponent, and one is free
           console.log({x: freeSpot2, y: boardSize - 1 - freeSpot2})
           possibleMoves.push({x: freeSpot2, y: boardSize - 1 - freeSpot2});
       }
 
-      if (possibleMoves.length > 0) {
-        return possibleMoves;
-      } else {
-        return undefined;
-      }
+      // if (possibleMoves.length > 0) {
+      //   return possibleMoves;
+      // } else {
+      //   return ;
+      // }
+      return possibleMoves
   
   }
 
@@ -139,7 +141,7 @@ export default function Board(){
         // Find a blocking move if there is one -> move there
         console.log("[Finding blocking move]")
         const blockingMove = findBlockingMove(board, currentTurn);
-        if (blockingMove){
+        if (blockingMove.length > 0){
           blockingMove.forEach(move => {
             console.log("[Blocking Move]", move)
             moveX = move.x;
@@ -367,7 +369,7 @@ export default function Board(){
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={12} sx={{paddingTop: "50px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
+      <Grid item xs={12} sx={{paddingBottom: "100px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
         {winner && <Box sx={{ display: 'flex', justifyContent: 'center' }}> 
           <Typography variant="h6">
             {winner === "draw" ? "Draw" : `Winner: ${winner}`}
@@ -375,7 +377,7 @@ export default function Board(){
         </Box>}
         {winner && <Button variant="contained" sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => window.location.reload()}>New Game</Button>}
       </Grid>
-      <Grid item xs={12} sx={{paddingTop: "150px", display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
+      <Grid item xs={12} sx={{display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
         <Box sx={{
           position: 'fixed',
           bottom: 0,
