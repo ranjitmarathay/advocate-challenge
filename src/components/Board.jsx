@@ -85,8 +85,6 @@ export default function Board(){
         diagonal2.push(board[board.length - 1 - i][i])
       }
 
-      console.log("diagonals", diagonal1, diagonal2)
-
       // Check the first diagonal
       let opponentCount1 = diagonal1.filter(cell => cell === opponent).length;
       let freeSpot1 = diagonal1.indexOf(null);
@@ -106,7 +104,6 @@ export default function Board(){
       }
 
       if (possibleMoves.length > 0) {
-        // console.log(possibleMoves)
         return possibleMoves;
       } else {
         return undefined;
@@ -156,7 +153,7 @@ export default function Board(){
           while (!found && attempts < 100) {     
             moveX = Math.floor(Math.random() * boardSize);
             moveY = Math.floor(Math.random() * boardSize);
-            console.log("guessing", moveX, moveY);
+            // console.log("guessing", moveX, moveY);
             if (board[moveY][moveX] === null) {
               found = true;
               break;
