@@ -28,65 +28,78 @@ export default function Board(){
   const [botMove, setBotMove] = useState(gameMode === 'BotVBot' ? true : false)
 
   // This useEffect ensures that when we start a new game all the required default values are set
+
+  const resetBoard = () => {
+    setWinner(null);
+    setTurnLog([]);
+    setBoard(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)));
+    setBoardColumns(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)))
+    setBoardDiagonals(Array.from({length: boardSize-1}, () => Array.from({length: boardSize}, () => null)))
+    setCurrentTurn("X");
+  }
   useEffect(() => {
     if (gameStart) {
-      setWinner(null);
-      setTurnLog([]);
-      setBoard(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)));
-      setBoardColumns(Array.from({length: boardSize}, () => Array.from({length: boardSize}, () => null)))
-      setBoardDiagonals(Array.from({length: boardSize-1}, () => Array.from({length: boardSize}, () => null)))
-      setCurrentTurn("X");
+      resetBoard()
     }
   }, [gameStart, boardSize]);
 
   const handleBoardUpdate = (x, y, value, botMove) => {
-    const turn = {
-      x: x,
-      y: y,
-      value: currentTurn,
-      botMove: botMove
-    };
-    setBoard((prevBoard) => {
-      const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
-      // console.log("handleBoardUpdate setBoardRow newBoard", newBoard, x, y)
-      newBoard[turn.y][turn.x] = value;
-      return newBoard;
-    });
+    if (winner === null, board[y][x] === null) {
+      const turn = {
+        x: x,
+        y: y,
+        value: currentTurn,
+        botMove: botMove
+      };
+      setBoard((prevBoard) => {
+        const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
+        // console.log("handleBoardUpdate setBoardRow newBoard", newBoard, x, y)
+        if (newBoard[turn.y][turn.x] === null) {
+          newBoard[turn.y][turn.x] = value; 
+        }
+        return newBoard;
+      });
 
-    setBoardColumns((prevBoard) => {
-      const newBoard = prevBoard.map(row => [...row]);
-      let columnNum = turn.y
-      let rowNum = turn.x
-      // console.log("handleBoardUpdate setBoardColumns newBoard", newBoard, columnNum, rowNum)
-      newBoard[turn.x][turn.y] = value;
-      return newBoard;
-    });
+      setBoardColumns((prevBoard) => {
+        const newBoard = prevBoard.map(row => [...row]);
+        if (newBoard[turn.x][turn.y] === null) {
+          newBoard[turn.x][turn.y] = value
+        }
+        return newBoard;
+      });
 
-    setBoardDiagonals((prevBoard) => {
-      const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
-      // console.log("handleBoardUpdate setBoardColumns newBoard", newBoard, x, y)
-      if (x === y){
-        newBoard[0][turn.x] = value
-      } else if (x === boardSize - 1 - y){
-        newBoard[1][turn.x] = value
-      }
-      return newBoard;
-    });
-    
-    setCurrentTurn(value === "X" ? "O" : "X");
+      setBoardDiagonals((prevBoard) => {
+        const newBoard = prevBoard.map((row, index) => index === y ? row.slice() : row);
+        // console.log("handleBoardUpdate setBoardColumns newBoard", newBoard, x, y)
+        if (x === y){
+          newBoard[0][turn.x] = value
+        } 
+        if (x === boardSize - 1 - y){
+          newBoard[1][turn.x] = value
+        }
+        return newBoard;
+      });
+      
+      setCurrentTurn(value === "X" ? "O" : "X");
 
-    setTurnLog((prevLog) => [...prevLog, turn]);
-
+      setTurnLog((prevLog) => [...prevLog, turn]);
+    }
   }
 
-  const checkDiagonalBlockingMove = (diagonal, opponent) => {
+  const checkDiagonalBlockingMove = (diagonal, opponent, index) => {
     let opponentCount = diagonal.filter(cell => cell === opponent).length;
     let freeSpot = diagonal.indexOf(null);
+    console.log(opponentCount, freeSpot, index)
     
     if (opponentCount === boardSize - 1 && freeSpot !== -1) {
         // All but one square is the opponent, and one is free
-        console.log({x: freeSpot, y: freeSpot})
-        return {x: freeSpot, y: freeSpot};
+        if (index === 0) {
+          console.log({x: freeSpot, y: freeSpot})
+          return {x: freeSpot, y: freeSpot};
+        } else{
+          console.log({x: freeSpot, y: boardSize - 1 - freeSpot})
+          return {x: freeSpot, y: boardSize - 1 - freeSpot};
+        }
     }
     return null
   }
@@ -126,10 +139,10 @@ export default function Board(){
       }
 
 
-      // Check the first diagonal for 
-
-      for (const diagonal of boardDiagonals) {
-        let diagonalMoves = checkDiagonalBlockingMove(diagonal, opponent)
+      // Check diagonals for blocking moves
+      for (let i = 0; i < 2; i++) {
+        let diagonalMoves = checkDiagonalBlockingMove(boardDiagonals[i], opponent, i)
+        console.log("diagonalMoves", diagonalMoves)
         if (diagonalMoves){
           possibleMoves.push(diagonalMoves)
         }
@@ -233,7 +246,7 @@ export default function Board(){
 
   // This function checks both diagonals for a winner
   const checkWinnerDiagonal = () => {
-
+    console.log("Checking diagonals:", boardDiagonals);
     for (const diagonal of boardDiagonals) {
       if (diagonal.every((cellValue) => cellValue === "X")) {
         return "X"
@@ -242,6 +255,7 @@ export default function Board(){
         return "O"
       }
     }
+    console.log("No complete diagonal found");
     return null
   }
 
@@ -363,7 +377,7 @@ export default function Board(){
             {winner === "draw" ? "Draw" : `Winner: ${winner}`}
           </Typography>
         </Box>}
-        {winner && <Button variant="contained" sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => window.location.reload()}>New Game</Button>}
+        {winner && <Button variant="contained" sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => resetBoard()}>New Game</Button>}
       </Grid>
       <Grid item xs={12} sx={{display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: 'center'}}>
         <Box sx={{
