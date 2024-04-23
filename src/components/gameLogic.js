@@ -63,7 +63,7 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
     return possibleMoves
 }
 
-
+// Check if there is a move that will win the game
 export const checkMovePriority = (board, boardColumns, boardDiagonals, currentTurn) => {
   var moves = []
   const boardSize = board.length;
@@ -98,7 +98,7 @@ export const checkMovePriority = (board, boardColumns, boardDiagonals, currentTu
     }
   }
 
-  return moves.sort((a, b) => b.priority - a.priority);
+  return moves;
 };
 
 export function shufflePriorityGroupedItems(items) {
@@ -113,16 +113,15 @@ export function shufflePriorityGroupedItems(items) {
   for (const item of items) {
       if (item.priority !== currentPriority) {
           if (tempArray.length > 0) {
-              shuffleArray(tempArray);  // Shuffle the current group
-              shuffledItems.push(...tempArray);  // Add shuffled group to final array
-              tempArray = [];  // Reset temporary array for the next group
+              shuffleArray(tempArray); 
+              shuffledItems.push(...tempArray); 
+              tempArray = []; 
           }
-          currentPriority = item.priority;  // Update the current priority
+          currentPriority = item.priority; 
       }
       tempArray.push(item);
   }
 
-  // Shuffle and append the last group
   if (tempArray.length > 0) {
       shuffleArray(tempArray);
       shuffledItems.push(...tempArray);

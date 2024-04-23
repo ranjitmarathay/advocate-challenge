@@ -12,26 +12,6 @@ export default function Cell(props){
   }, [props.value])
 
 
-  // const handleClick = () => {
-  //   if (value === null && props.winner === null) {
-  //     const turn = {
-  //       x: props.x,
-  //       y: props.y,
-  //       value: props.currentTurn
-  //     };
-
-  //     props.setBoard((prevBoard) => {
-  //       const newBoard = prevBoard.map((row, index) => index === props.y ? row.slice() : row);
-  //       newBoard[props.y][props.x] = props.currentTurn;
-  //       return newBoard;
-  //     });
-
-  //     console.log(turn, props.currentTurn);
-  //     props.setTurnLog((prevLog) => [...prevLog, turn]);
-  //     props.setCurrentTurn(props.currentTurn === "X" ? "O" : "X");
-  //   }
-  // };
-
   return (
     <Box
       display="flex"
@@ -42,7 +22,6 @@ export default function Cell(props){
       borderColor={"black"}
       border={1}
       data-testid={`cell-${props.x}-${props.y}`}
-      // onClick={() => handleClick()}
       onClick={() => props.handleBoardUpdate(props.x, props.y, props.currentTurn, props.botMove)}
     >
       {value}
