@@ -73,9 +73,6 @@ export const checkMovePriority = (board, boardColumns, boardDiagonals, currentTu
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (board[i][j] === null) {
-        // let tempBoard = board.map(row => [...row]);
-        // let tempColumns = boardColumns.map(column => [...column]);
-        // let tempDiagonals = [ [...boardDiagonals[0]], [...boardDiagonals[1]] ];
 
         tempBoard[i][j] = currentTurn;
         tempColumns[j][i] = currentTurn;

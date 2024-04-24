@@ -1,6 +1,6 @@
 import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Board from './Board'; // Adjust the import path as necessary
+import Board from './Board';
 
 describe('Horizontal Win for X', () => {
   test('should declare player X as the winner with a horizontal line', async () => {
@@ -15,7 +15,6 @@ describe('Horizontal Win for X', () => {
     fireEvent.click(screen.getByTestId('cell-2-2')); // O
     fireEvent.click(screen.getByTestId('cell-0-0')); // X wins on the top row
 
-    // Check for winner announcement, depending on how you show it
     expect(screen.getByText('Winner: X')).toBeInTheDocument();
   });
 });
@@ -32,7 +31,6 @@ describe('Vertical Win for X', () => {
     fireEvent.click(screen.getByTestId('cell-0-2')); // O
     fireEvent.click(screen.getByTestId('cell-2-0')); // X wins on the first column
 
-    // Check for winner announcement
     expect(screen.getByText('Winner: X')).toBeInTheDocument();
   });
 });
