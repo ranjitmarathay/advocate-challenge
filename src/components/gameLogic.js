@@ -45,7 +45,7 @@ export const findBlockingMove = (board, boardColumns, boardDiagonals, currentTur
       let opponentCount = row.filter(cell => cell === opponent).length;
   
       if (freeSpot !== -1 && opponentCount === boardSize - 1) {
-        console.log({moveX: freeSpot, moveY: i})
+        // console.log({moveX: freeSpot, moveY: i})
         possibleMoves.push({moveX: freeSpot, moveY: i, priority: parseFloat(process.env.NEXT_PUBLIC_BLOCK_PRIORITY) || 0.75});
       }
     }

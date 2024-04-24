@@ -1,5 +1,6 @@
 import { checkWinnerHorizontal, checkWinnerVertical } from './../components/checkWinner';
-import { checkMovePriority } from './../components/gameLogic'; // adjust the import path as necessary
+import { checkMovePriority, findBlockingMove } from './../components/gameLogic'; // adjust the import path as necessary
+import { generateTestCase } from './../utils/testUtils';
 
 describe('checkMovePriority horizontal winning', () => {
   test('should prioritize moves based on game state', () => {
@@ -89,12 +90,38 @@ describe('checkMovePriority 1', () => {
       ['O', 'X', null]
     ];
     const currentTurn = 'O';
-    // const results = checkWinnerHorizontal(board);
-    // expect(results).toBe('X');
-    const results = checkMovePriority(board, boardColumns, boardDiagonals, currentTurn);
-    // Check if the top left corner is given a higher priority, being a corner and empty
-    //expect(results[0]).toEqual({ moveX: 2, moveY: 1, priority: 1 });
-    expect(results[0]).toEqual({ moveX: 2, moveY: 0, priority: 1 });
-    // expect(results[1]).toEqual({ moveX: 2, moveY: 2, priority: 1 });
+    
+    const blockingMoves = findBlockingMove(board, boardColumns, boardDiagonals, currentTurn);
+    const possibleMoves = checkMovePriority(board, boardColumns, boardDiagonals, currentTurn);
+    const allMoves = blockingMoves.concat(possibleMoves).sort((a, b) => b.priority - a.priority)
+  
+    
+    expect(allMoves[0]).toEqual({ moveX: 2, moveY: 0, priority: 1 });
+    expect(allMoves[1]).toEqual({ moveX: 2, moveY: 2, priority: 1 });
+    expect(allMoves[2]).toEqual({ moveX: 2, moveY: 1, priority: 0.75 });
   });
 });
+
+
+describe('auomated checkMovePriority', () => {
+  test('should prioritize moves based on game state', () => {
+    const board = [
+      ['O', 'O', null], 
+      ['X', 'X', null], 
+      ['O', 'O', null]
+    ];
+    const boardColumns = [
+      ['O', 'X', 'O'], 
+      ['O', 'X', 'O'], 
+      [null, null, null]
+    ];
+    const boardDiagonals = [
+      ['O', 'X', null], 
+      ['O', 'X', null]
+    ];
+    const currentTurn = 'O';
+    
+    const blockingMoves = findBlockingMove(board, boardColumns, boardDiagonals, currentTurn);
+    const possibleMoves = checkMovePriority(board, boardColumns, boardDiagonals, currentTurn);
+  });
+})
