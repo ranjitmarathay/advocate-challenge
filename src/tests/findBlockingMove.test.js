@@ -1,5 +1,5 @@
 import { SignalWifiStatusbarNullOutlined } from '@mui/icons-material';
-import { findBlockingMove } from './../components/gameLogic'; // adjust the import path as necessary
+import { findBlockingMove } from './../components/gameLogic';
 
 describe('findBlockingMove horizontal 0', () => {
   test('should identify blocking moves correctly', () => {
@@ -19,7 +19,7 @@ describe('findBlockingMove horizontal 0', () => {
     ];
     const currentTurn = 'X';
     const expectedOutput = [
-      { moveX: 2, moveY: 1, priority: 0.75 }, // block O in middle row
+      { moveX: 2, moveY: 1, priority: 0.75 },
     ];
     expect(findBlockingMove(board, boardColumns, boardDiagonals, currentTurn)).toEqual(expect.arrayContaining(expectedOutput));
   });
@@ -43,7 +43,7 @@ describe('findBlockingMove vertical 0', () => {
     ];
     const currentTurn = 'O';
     const expectedOutput = [
-      { moveX: 0, moveY: 2, priority: 0.75 }, // block O in middle row
+      { moveX: 0, moveY: 2, priority: 0.75 },
     ];
     expect(findBlockingMove(board, boardColumns, boardDiagonals, currentTurn)).toEqual(expect.arrayContaining(expectedOutput));
   });
@@ -68,7 +68,7 @@ describe('findBlockingMove vertical 1', () => {
     ];
     const currentTurn = 'X';
     const expectedOutput = [
-      { moveX: 1, moveY: 0, priority: 0.75 }, // block O in middle row
+      { moveX: 1, moveY: 0, priority: 0.75 },
     ];
     expect(findBlockingMove(board, boardColumns, boardDiagonals, currentTurn)).toEqual(expect.arrayContaining(expectedOutput));
   });
