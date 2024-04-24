@@ -45,6 +45,8 @@ export default function Board(){
     }
   }, [gameStart, boardSize]);
 
+
+  // This function updates the board, its columns and diagonals representations, the current turn, and the turn log
   const handleBoardUpdate = (x, y, value, botMove) => {
     if (winner === null && board[y][x] === null) {
       const turn = {
@@ -111,13 +113,14 @@ export default function Board(){
         let found = false;
         let moveX, moveY;        
         
+        // Find all possible moves and concatenate them into an array then sort it into priority order
         const blockingMoves = findBlockingMove(board, boardColumns, boardDiagonals, currentTurn);
         const possibleMoves = checkMovePriority(board, boardColumns, boardDiagonals, currentTurn)
         const allMoves = blockingMoves.concat(possibleMoves).sort((a, b) => b.priority - a.priority)
         
-        console.log("all possible moves", allMoves)
+        // console.log("all possible moves", allMoves)
 
-        // Shuffle moves to randomize the order of the bot's moves within a priority
+        // Shuffle moves to randomize the order of the bot's moves within a priority otherwise it is the same bot game again and again
         const shuffledMoves = shufflePriorityGroupedItems(allMoves)
 
         
@@ -146,8 +149,8 @@ export default function Board(){
   
   // This useEffect checks if there is a winner everytime the turnLog array changes, as long as the turnLog array is at least the same length as the board size -1 * 2 (minimum requirement to win)
   useEffect(() => {
-    // If turnLog.length is greater than or equal to boardSize -1 * 2, check if there is a winner
     
+    // If turnLog.length is greater than or equal to boardSize -1 * 2, check if there is a winner
     if(turnLog.length >= (boardSize - 1 * 2)){
       
       const horizontalWinner = checkWinnerHorizontal(board)
@@ -161,12 +164,12 @@ export default function Board(){
       } else if (winner === null && turnLog.length === boardSize * boardSize) {
         setWinner("draw")
       } else {
-        // console.log("[NO WINNER YET] turnLog.length", turnLog.length)
+        console.log("[NO WINNER YET] turnLog.length", turnLog.length)
       }
     }
   },[turnLog])
 
-  // This function creates the board and the cells
+  // This function creates the board and the cells by passing all the relevant information to it
   const createBoard = () => {
     return (
       board.map((row, i) => (
@@ -176,14 +179,8 @@ export default function Board(){
               key={`${i}-${j}`}
               value={cellValue} 
               x={j} 
-              y={i} 
-              setTurnLog={setTurnLog}
+              y={i}
               currentTurn={currentTurn}
-              turnLog={turnLog}
-              setCurrentTurn={setCurrentTurn}
-              board={board}
-              setBoard={setBoard}
-              winner={winner}
               handleBoardUpdate={handleBoardUpdate}
               botMove={botMove}
             />
@@ -274,14 +271,16 @@ export default function Board(){
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <GitHubIcon sx={{ mr: 1 }} />
+          <Link 
+            href="https://github.com/ranjitmarathay/advocate-challenge" 
+            sx={{ ml: 0.5 }}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GitHubIcon sx={{ mr: 1, color: 'black'}} />
+          </Link>
           <Typography variant="body1">
-            made by 
-            <Link 
-              href="https://github.com/ranjitmarathay" 
-              sx={{ ml: 0.5 }}>
-              Ranjit Marathay
-            </Link>
+            made by Ranjit Marathay
           </Typography>
         </Box>
       </Grid>
